@@ -1,26 +1,37 @@
-name: QA Smoke Test          # name shown in Actions tab
+name: QA Automation Suite
  
 on:
   push:
-    branches: [main]         # trigger: runs on every push to main branch
+    branches: [main]
+  pull_request:
+    branches: [main]
  
 jobs:
-  test:                      # job name — you choose this
-    runs-on: ubuntu-latest   # GitHub spins up a fresh Linux machine
+  robot-tests:
+    runs-on: ubuntu-latest
  
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3     # downloads your repo onto the machine
+        uses: actions/checkout@v3
  
       - name: Set up Python
-        uses: actions/setup-python@v4 # installs Python (pre-built action)
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'   # stable version for CI
  
-      - name: Install pytest
-        run: pip install pytest       # plain terminal command
+      - name: Install dependencies
+        run: pip install -r requirements.txt
  
-      - name: Run smoke test
-        run: |                        # | means multiple commands
-          echo "QA pipeline running!"
-          python -m pytest --version
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+ 
+      - name: Run Robot Framework tests
+        run: |
+          robot --outputdir results tests/
+ 
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: robot-results
+          path: results/
