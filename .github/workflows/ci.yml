@@ -30,17 +30,7 @@ jobs:
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
 
-      # ✅ Install Allure
-      - name: Install Allure
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-11-jre
-          wget https://github.com/allure-framework/allure2/releases/latest/download/allure-2.29.0.tgz
-          tar -zxvf allure-2.29.0.tgz
-          sudo mv allure-2.29.0 /opt/allure
-          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-
-      # ✅ Run tests with Allure listener
+      # ✅ Run Robot Framework tests with Allure listener
       - name: Run Robot Framework tests
         run: |
           python -m robot \
@@ -48,10 +38,13 @@ jobs:
           --listener allure_robotframework \
           --outputdir results tests/
 
-      # ✅ Generate Allure Report
+      # ✅ Generate Allure Report (no manual install needed)
       - name: Generate Allure Report
-        run: |
-          allure generate results -o allure-report --clean
+        uses: simple-elf/allure-report-action@v1
+        if: always()
+        with:
+          allure_results: results
+          allure_report: allure-report
 
       # ✅ Upload Allure Report
       - name: Upload Allure Report
@@ -60,7 +53,7 @@ jobs:
           name: allure-report
           path: allure-report/
 
-      # (Optional) Keep your original results also
+      # (Optional) Keep raw Robot results
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
