@@ -7,7 +7,7 @@ on:
     branches: [main]
   schedule:
     - cron: "30 3 * * *"   # Runs daily at 9:00 AM IST
-  workflow_dispatch:        # Optional: manual trigger
+  workflow_dispatch:
 
 jobs:
   robot-tests:
@@ -30,10 +30,37 @@ jobs:
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
 
+      # ✅ Install Allure
+      - name: Install Allure
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jre
+          wget https://github.com/allure-framework/allure2/releases/latest/download/allure-2.29.0.tgz
+          tar -zxvf allure-2.29.0.tgz
+          sudo mv allure-2.29.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+
+      # ✅ Run tests with Allure listener
       - name: Run Robot Framework tests
         run: |
-          python -m robot --variable BROWSER:headlesschrome --outputdir results tests/
+          python -m robot \
+          --variable BROWSER:headlesschrome \
+          --listener allure_robotframework \
+          --outputdir results tests/
 
+      # ✅ Generate Allure Report
+      - name: Generate Allure Report
+        run: |
+          allure generate results -o allure-report --clean
+
+      # ✅ Upload Allure Report
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
+
+      # (Optional) Keep your original results also
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
